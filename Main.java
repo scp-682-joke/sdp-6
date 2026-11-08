@@ -1,48 +1,44 @@
-import java.util.Scanner;
-import context.CalculatorContext;
-import strategies.*;
+import elements.DirectoryNode;
+import elements.FileNode;
+import visitors.SearchVisitor;
+import visitors.StatisticsVisitor;
+import visitors.TotalSizeVisitor;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        System.out.println("=== Visitor Pattern FileSystem Demo ===");
 
-        System.out.println("=== Calculator ===");
-        System.out.print("Enter first number: ");
-        double num1 = scanner.nextDouble();
+        // file tree
+        DirectoryNode root = new DirectoryNode("root");
+        DirectoryNode src = new DirectoryNode("src");
+        DirectoryNode docs = new DirectoryNode("docs");
 
-        System.out.print("Enter second number: ");
-        double num2 = scanner.nextDouble();
+        FileNode mainJava = new FileNode("Main.java", 1500);
+        FileNode readme = new FileNode("README.md", 2500);
+        FileNode logo = new FileNode("logo.png", 50000);
 
-        System.out.println("\nSelect an operation:");
-        System.out.println("1. Add (+)");
-        System.out.println("2. Subtract (-)");
-        System.out.println("3. Multiply (*)");
-        System.out.println("4. Divide (/)");
-        System.out.print("Enter choice (1-4): ");
-        int choice = scanner.nextInt();
+        src.add(mainJava);
+        docs.add(readme);
+        docs.add(logo);
 
-        // The Client uses switch/if ONLY to select and pass the strategy to the Context
-        OperationStrategy selectedStrategy = switch (choice) {
-            case 1 -> new AddStrategy();
-            case 2 -> new SubtractStrategy();
-            case 3 -> new MultiplyStrategy();
-            case 4 -> new DivideStrategy();
-            default -> {
-                System.out.println("Invalid choice! Defaulting to Addition.");
-                yield new AddStrategy();
-            }
-        };
+        root.add(src);
+        root.add(docs);
 
-        // Pass the chosen strategy to the Context[cite: 1]
-        CalculatorContext calculator = new CalculatorContext(selectedStrategy);
+        // 1. TotalSizeVisitor
+        TotalSizeVisitor sizeVisitor = new TotalSizeVisitor();
+        root.accept(sizeVisitor);
+        System.out.println("Total System Size: " + sizeVisitor.getTotalSize() + " bytes");
 
-        try {
-            double result = calculator.calculate(num1, num2);
-            System.out.println("\nResult: " + result);
-        } catch (ArithmeticException e) {
-            System.out.println("\nError: " + e.getMessage());
-        }
+        // 2. SearchVisitor
+        SearchVisitor searchVisitor = new SearchVisitor(".md", 1000);
+        root.accept(searchVisitor);
+        System.out.println("Search Results (.md >= 1000 bytes): " + searchVisitor.getMatchingPaths());
 
-        scanner.close();
+        // 3. StatisticsVisitor
+        StatisticsVisitor statsVisitor = new StatisticsVisitor();
+        root.accept(statsVisitor);
+        System.out.println("Statistics -> Files: " + statsVisitor.getFileCount()
+                + ", Directories: " + statsVisitor.getDirectoryCount()
+                + ", Max Depth: " + statsVisitor.getMaxDepth());
     }
 }
